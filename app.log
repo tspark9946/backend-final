@@ -1,0 +1,26 @@
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - SELECT DATABASE()
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - SELECT @@sql_mode
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - SELECT @@lower_case_table_names
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - DESCRIBE `testdb`.`user`
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:30:45 - sqlalchemy.engine.Engine - INFO - COMMIT
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - SELECT DATABASE()
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - SELECT @@sql_mode
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - SELECT @@lower_case_table_names
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - DESCRIBE `testdb`.`user`
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - [raw sql] ()
+2026-02-03 11:33:04 - sqlalchemy.engine.Engine - INFO - COMMIT
+2026-02-03 11:33:20 - sqlalchemy.engine.Engine - INFO - BEGIN (implicit)
+2026-02-03 11:33:20 - sqlalchemy.engine.Engine - INFO - SELECT user.name, user.email, user.id, user.email_verified, user.image, user.created_at, user.updated_at 
+FROM user 
+WHERE user.id = %s
+2026-02-03 11:33:20 - sqlalchemy.engine.Engine - INFO - [generated in 0.00130s] (2,)
+2026-02-03 11:33:20 - sqlalchemy.engine.Engine - INFO - ROLLBACK
