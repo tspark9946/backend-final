@@ -36,6 +36,16 @@ class SignService:
 
         return new_user
 
+    async def update_user(self, user: Sign, user_data: dict) -> Sign:
+
+        for key, value in user_data.items():
+            setattr(user, key, value)
+
+        await self._session.commit()
+        await self._session.refresh(user)
+
+        return user
+
     async def get_sign(self, sign_id: int) -> Sign | None:
         statement = select(Sign).where(Sign.sign_id == sign_id)
         results = await self._session.exec(statement)

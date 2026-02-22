@@ -7,7 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "aiomysql>=0.3.2",
     "alembic>=1.18.4",
+    "fastapi-mail>=1.6.2",
     "fastapi[all]>=0.128.0",
+    "itsdangerous>=2.2.0",
     "passlib>=1.7.4",
     "pyjwt>=2.11.0",
     "python-dotenv>=1.2.1",

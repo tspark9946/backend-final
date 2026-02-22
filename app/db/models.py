@@ -112,18 +112,15 @@ class Hospital(Base, table=True):
 
 class Sign(Base, SignBase, table=True):
     sign_id: int | None = Field(default=None, primary_key=True, index=True)
+    is_verified: bool = Field(default=False)
 
-    sign_role: str = Field(
-        sa_column=Column(String(20), nullable=False, server_default="user")
-    )
+    sign_role: str = Field(sa_column=Column(String(20), nullable=False, server_default="user"))
 
     # ForeignKey Option: CASCADE, SET NULL, NO ACTION, RESTRICT, SET DEFAULT
     hospital_id: int | None = Field(
         sa_column=Column(
             Integer,
-            ForeignKey(
-                "HOSPITAL.hospital_id", ondelete="NO ACTION", onupdate="CASCADE"
-            ),
+            ForeignKey("HOSPITAL.hospital_id", ondelete="NO ACTION", onupdate="CASCADE"),
             nullable=True,
         )
     )
