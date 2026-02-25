@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.v1 import auth, index
+from app.api.v1 import auth, index, sign
 from app.common.logging import setup_logging
 from app.errors import register_all_errors
 from app.middlewares.middleware import register_middleware
@@ -45,6 +45,7 @@ def create_app() -> FastAPI:
     # 라우터 등록
     app.include_router(index.router)
     app.include_router(auth.router, prefix=f"{version_prefix}/auth", tags=["auth"])
+    app.include_router(sign.router, prefix=f"{version_prefix}/sign", tags=["sign"])
 
     return app
 
@@ -54,4 +55,4 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_config=None)

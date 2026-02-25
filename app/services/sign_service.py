@@ -7,21 +7,18 @@ from app.utils.hashing import Hash
 
 
 class SignService:
-    def __init__(self, session: AsyncSession):
-        self._session = session
-
-    async def get_user_by_email(self, email: str):
+    async def get_user_by_email(self, session: AsyncSession, email: str):
         statement = select(Sign).where(Sign.sign_email == email)
-        result = await self._session.exec(statement)
+        result = await session.exec(statement)
         user = result.first()
 
         return user
 
-    async def user_exists(self, email: str) -> bool:
-        user = await self.get_user_by_email(email)
+    async def user_exists(self, session: AsyncSession, email: str) -> bool:
+        user = await self.get_user_by_email(session=session, email=email)
         return True if user is not None else False
 
-    async def create_user(self, user_data: SignCreate) -> Sign:
+    async def create_user(self, session: AsyncSession, user_data: SignCreate) -> Sign:
         user_data_dict = user_data.model_dump()
 
         new_user = Sign(**user_data_dict)
@@ -29,29 +26,29 @@ class SignService:
         new_user.sign_password = Hash.bcrypt(user_data_dict["sign_password"])
         # new_user.role = "user"
 
-        self._session.add(new_user)
+        session.add(new_user)
 
-        await self._session.commit()
-        await self._session.refresh(new_user)
+        await session.commit()
+        await session.refresh(new_user)
 
         return new_user
 
-    async def update_user(self, user: Sign, user_data: dict) -> Sign:
+    async def update_user(self, session: AsyncSession, user: Sign, user_data: dict) -> Sign:
 
         for key, value in user_data.items():
             setattr(user, key, value)
 
-        await self._session.commit()
-        await self._session.refresh(user)
+        await session.commit()
+        await session.refresh(user)
 
         return user
 
-    async def get_sign(self, sign_id: int) -> Sign | None:
+    async def get_sign(self, session: AsyncSession, sign_id: int) -> Sign | None:
         statement = select(Sign).where(Sign.sign_id == sign_id)
-        results = await self._session.exec(statement)
+        results = await session.exec(statement)
         return results.first()
 
-    async def get_signs(self, skip: int = 0, limit: int = 100) -> list[Sign]:
+    async def get_signs(self, session: AsyncSession, skip: int = 0, limit: int = 100) -> list[Sign]:
         statement = select(Sign).offset(skip).limit(limit)
-        results = await self._session.exec(statement)
-        return results.scalars().all()
+        results = await session.exec(statement)
+        return results.all()

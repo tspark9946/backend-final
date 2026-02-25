@@ -7,9 +7,12 @@ from sqlalchemy.exc import SQLAlchemyError
 
 
 class APIException(Exception):
-    """This is the base class for all bookly errors"""
+    """base exception class"""
 
-    pass
+    # def __init__(self, message: str = "Service is unavailable", name: str = "PMSService"):
+    #     self.message = message
+    #     self.name = name
+    #     super().__init__(self.message, self.name)
 
 
 class InvalidToken(APIException):
@@ -88,9 +91,9 @@ def create_exception_handler(
     status_code: int, initial_detail: Any
 ) -> Callable[[Request, Exception], JSONResponse]:
 
-    async def exception_handler(request: Request, exc: APIException):
+    async def exception_handler(request: Request, exc: APIException) -> JSONResponse:
 
-        return JSONResponse(content=initial_detail, status_code=status_code)
+        return JSONResponse(status_code=status_code, content=initial_detail)
 
     return exception_handler
 
@@ -130,7 +133,7 @@ def register_all_errors(app: FastAPI):
     app.add_exception_handler(
         InvalidCredentials,
         create_exception_handler(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status.HTTP_400_BAD_REQUEST,
             initial_detail={
                 "message": "Invalid Email Or Password",
                 "error_code": "invalid_email_or_password",

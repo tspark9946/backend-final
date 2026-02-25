@@ -6,9 +6,7 @@ from sqlmodel import Column, Field, SQLModel, String
 
 class SignBase(SQLModel):
     sign_name: str = Field(max_length=32)
-    sign_email: str = Field(
-        sa_column=Column(String(64), nullable=False, unique=True, index=True)
-    )
+    sign_email: str = Field(sa_column=Column(String(64), nullable=False, unique=True, index=True))
     sign_password: str = Field(max_length=255)
     sign_cellphone: str = Field(max_length=50, nullable=True, unique=True)
     sign_license_number: str = Field(max_length=100, nullable=True)
@@ -66,3 +64,12 @@ class UserToken(SQLModel):
     hospital_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PasswordResetRequestModel(SQLModel):
+    email: str
+
+
+class PasswordResetConfirmModel(SQLModel):
+    new_password: str
+    confirm_new_password: str

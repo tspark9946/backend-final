@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, status
+from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -8,7 +9,14 @@ from app.common.config import settings
 from app.db.database import get_session
 from app.db.redis import add_jti_to_blocklist
 from app.errors import InvalidCredentials, InvalidToken, UserAlreadyExists, UserNotFound
-from app.schemas.sign import SignCreate, SignResponse, UserLogin, UserToken
+from app.schemas.sign import (
+    PasswordResetConfirmModel,
+    PasswordResetRequestModel,
+    SignCreate,
+    SignResponse,
+    UserLogin,
+    UserToken,
+)
 from app.services.sign_service import SignService
 from app.utils.dependencies import (
     AccessTokenBearer,
@@ -21,6 +29,7 @@ from app.utils.mail import create_message, mail
 from app.utils.token import create_access_token, create_url_safe_token, decode_url_safe_token
 
 router = APIRouter()
+sign_service = SignService()
 role_checker = RoleChecker(allowed_roles=["admin", "user"])
 
 
@@ -30,12 +39,12 @@ REFRESH_TOKEN_EXPIRY = 2
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user_Account(user_data: SignCreate, session: AsyncSession = Depends(get_session)):
     email = user_data.sign_email
-    exists = await SignService(session=session).user_exists(email=email)
+    exists = await sign_service.user_exists(session=session, email=email)
 
     if exists:
         raise UserAlreadyExists()
 
-    new_user = await SignService(session=session).create_user(user_data=user_data)
+    new_user = await sign_service.create_user(session=session, user_data=user_data)
 
     token = create_url_safe_token({"email": email})
 
@@ -52,7 +61,6 @@ async def create_user_Account(user_data: SignCreate, session: AsyncSession = Dep
     message = create_message(subject=subject, recipients=emails, body=html)
 
     await mail.send_message(message)
-    print(f"Verification link for {emails}: {html}, {subject}")
 
     return {
         "message": "Account Created! Check email to verify your account",
@@ -68,12 +76,12 @@ async def verify_user_account(token: str, session: AsyncSession = Depends(get_se
     user_email = token_data.get("email")
 
     if user_email:
-        user = await SignService(session=session).get_user_by_email(email=user_email)
+        user = await sign_service.get_user_by_email(session=session, email=user_email)
 
         if not user:
             raise UserNotFound()
 
-        await SignService(session=session).update_user(user, {"is_verified": True})
+        await sign_service.update_user(session=session, user=user, user_data={"is_verified": True})
 
         return JSONResponse(
             content={"message": "Account verified successfully"},
@@ -91,7 +99,7 @@ async def login_user(user_data: UserLogin, session: AsyncSession = Depends(get_s
     email = user_data.sign_email
     password = user_data.sign_password
 
-    user = await SignService(session=session).get_user_by_email(email=email)
+    user = await sign_service.get_user_by_email(session=session, email=email)
 
     if user is not None:
         password_valid = Hash.verify(plain_password=password, hashed_password=user.sign_password)
@@ -132,7 +140,7 @@ async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer(
 
         return JSONResponse(content={"access_token": new_access_token})
 
-    raise InvalidToken()
+    raise InvalidToken(name="Refresh Token Expired", message="Please login again to get new tokens")
 
 
 @router.get("/me", response_model=SignResponse)
@@ -149,6 +157,65 @@ async def revoke_token(token_details: dict = Depends(AccessTokenBearer())):
     return JSONResponse(content={"message": "Logged Out Successfully"}, status_code=status.HTTP_200_OK)
 
 
-@router.get("/users/{user_id}", response_model=SignResponse)
-async def read_user(user_id: int, session: AsyncSession = Depends(get_session)):
-    pass
+@router.post("/password-reset-request")
+async def password_reset_request(email_data: PasswordResetRequestModel):
+    email = email_data.email
+
+    token = create_url_safe_token({"email": email})
+
+    link = f"http://{settings.DOMAIN}/api/v1/auth/password-reset-confirm/{token}"
+
+    html_message = f"""
+    <h1>Reset Your Password</h1>
+    <p>Please click this <a href="{link}">link</a> to Reset Your Password</p>
+    """
+    subject = "Reset Your Password"
+
+    emails = [email]
+
+    message = create_message(subject=subject, recipients=emails, body=html_message)
+
+    await mail.send_message(message)
+
+    return JSONResponse(
+        content={
+            "message": "Please check your email for instructions to reset your password",
+        },
+        status_code=status.HTTP_200_OK,
+    )
+
+
+@router.post("/password-reset-confirm/{token}")
+async def reset_account_password(
+    token: str,
+    passwords: PasswordResetConfirmModel,
+    session: AsyncSession = Depends(get_session),
+):
+    new_password = passwords.new_password
+    confirm_password = passwords.confirm_new_password
+
+    if new_password != confirm_password:
+        raise HTTPException(detail="Passwords do not match", status_code=status.HTTP_400_BAD_REQUEST)
+
+    token_data = decode_url_safe_token(token)
+
+    user_email = token_data.get("email")
+
+    if user_email:
+        user = await sign_service.get_user_by_email(session, user_email)
+
+        if not user:
+            raise UserNotFound()
+
+        passwd_hash = Hash.bcrypt(new_password)
+        await sign_service.update_user(session, user, {"sign_password": passwd_hash})
+
+        return JSONResponse(
+            content={"message": "Password reset Successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    return JSONResponse(
+        content={"message": "Error occured during password reset."},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )

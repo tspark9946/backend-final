@@ -10,12 +10,15 @@ from app.db.models import Sign
 from app.db.redis import token_in_blocklist
 from app.errors import (
     AccessTokenRequired,
+    AccountNotVerified,
     InsufficientPermission,
     InvalidToken,
     RefreshTokenRequired,
 )
 from app.services.sign_service import SignService
 from app.utils.token import decode_token
+
+sign_service = SignService()
 
 
 class TokenBearer(HTTPBearer):
@@ -66,7 +69,7 @@ async def get_current_user(
 ):
     user_email = token_details["user"]["sign_email"]
 
-    user = await SignService(session=session).get_user_by_email(user_email)
+    user = await sign_service.get_user_by_email(session=session, email=user_email)
 
     return user
 
@@ -77,8 +80,9 @@ class RoleChecker:
         self.allowed_roles = allowed_roles
 
     def __call__(self, current_user: Sign = Depends(get_current_user)) -> Any:
-        # if not current_user.is_verified:
-        #     raise HTTPException()
+        if not current_user.is_verified:
+            raise AccountNotVerified()
+
         if current_user.sign_role in self.allowed_roles:
             return True
 
