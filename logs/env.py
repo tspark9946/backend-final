@@ -8,15 +8,14 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from sqlmodel import SQLModel
 from app.common.config import settings
-from app.db.models import *  # noqa: F401
 
 
 database_url = settings.DATABASE_URL
 
-
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
@@ -53,8 +52,9 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
         compare_server_default=True,
+        dialect_opts={"paramstyle": "named"},
+        
     )
 
     with context.begin_transaction():

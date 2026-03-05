@@ -43,7 +43,7 @@ def create_app() -> FastAPI:
     register_all_errors(app)
 
     # 라우터 등록
-    app.include_router(index.router)
+    app.include_router(index.router, tags=["index"])
     app.include_router(auth.router, prefix=f"{version_prefix}/auth", tags=["auth"])
     app.include_router(sign.router, prefix=f"{version_prefix}/sign", tags=["sign"])
 

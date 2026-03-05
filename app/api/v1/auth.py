@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -37,7 +37,9 @@ REFRESH_TOKEN_EXPIRY = 2
 
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
-async def create_user_Account(user_data: SignCreate, session: AsyncSession = Depends(get_session)):
+async def create_user_Account(
+    user_data: SignCreate, bg_tasks: BackgroundTasks, session: AsyncSession = Depends(get_session)
+):
     email = user_data.sign_email
     exists = await sign_service.user_exists(session=session, email=email)
 
@@ -60,38 +62,13 @@ async def create_user_Account(user_data: SignCreate, session: AsyncSession = Dep
     subject = "Verify Your email"
     message = create_message(subject=subject, recipients=emails, body=html)
 
-    await mail.send_message(message)
+    # background task로 이메일 전송하여 API 응답 지연 방지
+    bg_tasks.add_task(mail.send_message, message)
 
     return {
         "message": "Account Created! Check email to verify your account",
         "user": new_user,
     }
-
-
-@router.get("/verify/{token}")
-async def verify_user_account(token: str, session: AsyncSession = Depends(get_session)):
-
-    token_data = decode_url_safe_token(token)
-
-    user_email = token_data.get("email")
-
-    if user_email:
-        user = await sign_service.get_user_by_email(session=session, email=user_email)
-
-        if not user:
-            raise UserNotFound()
-
-        await sign_service.update_user(session=session, user=user, user_data={"is_verified": True})
-
-        return JSONResponse(
-            content={"message": "Account verified successfully"},
-            status_code=status.HTTP_200_OK,
-        )
-
-    return JSONResponse(
-        content={"message": "Error occured during verification"},
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    )
 
 
 @router.post("/login")
@@ -131,6 +108,15 @@ async def login_user(user_data: UserLogin, session: AsyncSession = Depends(get_s
     raise InvalidCredentials()
 
 
+@router.get("/logout")
+async def revoke_token(token_details: dict = Depends(AccessTokenBearer())):
+    jti = token_details["jti"]
+
+    await add_jti_to_blocklist(jti)
+
+    return JSONResponse(content={"message": "Logged Out Successfully"}, status_code=status.HTTP_200_OK)
+
+
 @router.get("/refresh_token")
 async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer())):
     expiry_timestamp = token_details["exp"]
@@ -145,20 +131,46 @@ async def get_new_access_token(token_details: dict = Depends(RefreshTokenBearer(
 
 @router.get("/me", response_model=SignResponse)
 async def get_current_user(user=Depends(get_current_user), _: bool = Depends(role_checker)):
+    """
+    현재 로그인한 사용자의 정보를 반환하는 엔드포인트입니다. \n
+    Access Token을 검증하여 사용자 정보를 추출하고, 해당 정보를 기반으로 데이터베이스에서 사용자를 조회하여 반환합니다.\n
+    사용자 정보는 SignResponse 모델로 직렬화되어 반환됩니다."""
     return user
 
 
-@router.get("/logout")
-async def revoke_token(token_details: dict = Depends(AccessTokenBearer())):
-    jti = token_details["jti"]
+@router.get("/verify/{token}")
+async def verify_user_account(token: str, session: AsyncSession = Depends(get_session)):
+    """
+    이메일 인증을 위한 엔드포인트입니다.\n
+    사용자가 이메일에 포함된 링크를 클릭하면 이 엔드포인트가 호출됩니다.\n
+    URL-safe 토큰을 디코딩하여 이메일을 추출하고, 해당 이메일을 가진 사용자를 데이터베이스에서 조회하여 계정을 활성화합니다.
+    """
 
-    await add_jti_to_blocklist(jti)
+    token_data = decode_url_safe_token(token)
 
-    return JSONResponse(content={"message": "Logged Out Successfully"}, status_code=status.HTTP_200_OK)
+    user_email = token_data.get("email")
+
+    if user_email:
+        user = await sign_service.get_user_by_email(session=session, email=user_email)
+
+        if not user:
+            raise UserNotFound()
+
+        await sign_service.update_user(session=session, user=user, user_data={"is_verified": True})
+
+        return JSONResponse(
+            content={"message": "Account verified successfully"},
+            status_code=status.HTTP_200_OK,
+        )
+
+    return JSONResponse(
+        content={"message": "Error occured during verification"},
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
 
 
 @router.post("/password-reset-request")
-async def password_reset_request(email_data: PasswordResetRequestModel):
+async def password_reset_request(email_data: PasswordResetRequestModel, bg_tasks: BackgroundTasks):
     email = email_data.email
 
     token = create_url_safe_token({"email": email})
@@ -175,7 +187,7 @@ async def password_reset_request(email_data: PasswordResetRequestModel):
 
     message = create_message(subject=subject, recipients=emails, body=html_message)
 
-    await mail.send_message(message)
+    bg_tasks.add_task(mail.send_message, message)
 
     return JSONResponse(
         content={

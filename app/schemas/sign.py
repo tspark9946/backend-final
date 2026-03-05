@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from pydantic import ConfigDict
-from sqlmodel import Column, Field, SQLModel, String
+from sqlalchemy.dialects.mysql import TINYINT
+from sqlmodel import Column, Field, SQLModel, String, text
 
 
 class SignBase(SQLModel):
@@ -9,15 +10,21 @@ class SignBase(SQLModel):
     sign_email: str = Field(sa_column=Column(String(64), nullable=False, unique=True, index=True))
     sign_password: str = Field(max_length=255)
     sign_cellphone: str = Field(max_length=50, nullable=True, unique=True)
-    sign_license_number: str = Field(max_length=100, nullable=True)
-    sign_department: str = Field(max_length=100, nullable=True)
-    sign_jobtitle: str = Field(max_length=100, nullable=True)
+    sign_license_number: str | None = Field(default=None, max_length=100, nullable=True)
+    sign_department: str | None = Field(default=None, max_length=100, nullable=True)
+    sign_jobtitle: str | None = Field(default=None, max_length=100, nullable=True)
+    sign_resign: int | None = Field(
+        default=0,
+        sa_column=Column(TINYINT, nullable=False, server_default=text("0")),
+    )
+    sign_resign_date: datetime | None = Field(default=None, nullable=True)
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class SignCreate(SignBase):
     hospital_id: int
+    order_idx: int | None = Field(default=None)
 
     model_config = {
         "json_schema_extra": {
@@ -41,6 +48,10 @@ class SignResponse(SignBase):
     hospital_id: int
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+    model_config = ConfigDict(
+        json_encoders={datetime: lambda v: v.strftime("%Y-%m-%d %H:%M")},
+    )
 
 
 class SignUpdate(SignBase):
