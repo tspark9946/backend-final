@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.v1 import auth, index, sign
+from app.api.v1 import auth, client, index, sign
 from app.common.logging import setup_logging
 from app.errors import register_all_errors
 from app.middlewares.middleware import register_middleware
@@ -46,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(index.router, tags=["index"])
     app.include_router(auth.router, prefix=f"{version_prefix}/auth", tags=["auth"])
     app.include_router(sign.router, prefix=f"{version_prefix}/sign", tags=["sign"])
+    app.include_router(client.router, prefix=f"{version_prefix}/client", tags=["client"])
 
     return app
 

@@ -63,11 +63,12 @@ async def create_user_Account(
     message = create_message(subject=subject, recipients=emails, body=html)
 
     # background task로 이메일 전송하여 API 응답 지연 방지
-    bg_tasks.add_task(mail.send_message, message)
+    # 임시 메일 생성때문에 임시로 주석처리
+    # bg_tasks.add_task(mail.send_message, message)
 
     return {
         "message": "Account Created! Check email to verify your account",
-        "user": new_user,
+        "user": new_user.model_dump(exclude={"sign_password"}),
     }
 
 
@@ -138,7 +139,7 @@ async def get_current_user(user=Depends(get_current_user), _: bool = Depends(rol
     return user
 
 
-@router.get("/verify/{token}")
+@router.get("/verify/{token}", include_in_schema=False)
 async def verify_user_account(token: str, session: AsyncSession = Depends(get_session)):
     """
     이메일 인증을 위한 엔드포인트입니다.\n
@@ -169,7 +170,7 @@ async def verify_user_account(token: str, session: AsyncSession = Depends(get_se
     )
 
 
-@router.post("/password-reset-request")
+@router.post("/password-reset-request", include_in_schema=False)
 async def password_reset_request(email_data: PasswordResetRequestModel, bg_tasks: BackgroundTasks):
     email = email_data.email
 
@@ -197,7 +198,7 @@ async def password_reset_request(email_data: PasswordResetRequestModel, bg_tasks
     )
 
 
-@router.post("/password-reset-confirm/{token}")
+@router.post("/password-reset-confirm/{token}", include_in_schema=False)
 async def reset_account_password(
     token: str,
     passwords: PasswordResetConfirmModel,

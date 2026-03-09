@@ -14,8 +14,8 @@ from app.common.config import settings
 
 # 데이터베이스 연결 URL (MySQL 형식)
 # mysql+pymysql://<user>:<password>@<host>:<port>/<database>
-async_engine = create_async_engine(url=settings.DATABASE_URL)
-# async_engine = create_async_engine(url=settings.DATABASE_URL, echo=True)
+# async_engine = create_async_engine(url=settings.DATABASE_URL)
+async_engine = create_async_engine(url=settings.DATABASE_URL, echo=True)
 
 
 async def initdb():

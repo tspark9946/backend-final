@@ -6,10 +6,12 @@ from sqlmodel import Column, Field, SQLModel, String, text
 
 
 class SignBase(SQLModel):
-    sign_name: str = Field(max_length=32)
-    sign_email: str = Field(sa_column=Column(String(64), nullable=False, unique=True, index=True))
-    sign_password: str = Field(max_length=255)
-    sign_cellphone: str = Field(max_length=50, nullable=True, unique=True)
+    sign_name: str | None = Field(default=None, max_length=32)
+    sign_password: str | None = Field(default=None, min_length=8, max_length=255)
+    sign_email: str | None = Field(
+        default=None, sa_column=Column(String(64), nullable=False, unique=True, index=True)
+    )
+    sign_cellphone: str | None = Field(default=None, max_length=50, nullable=True, unique=True)
     sign_license_number: str | None = Field(default=None, max_length=100, nullable=True)
     sign_department: str | None = Field(default=None, max_length=100, nullable=True)
     sign_jobtitle: str | None = Field(default=None, max_length=100, nullable=True)
@@ -24,6 +26,7 @@ class SignBase(SQLModel):
 
 class SignCreate(SignBase):
     hospital_id: int
+    sign_role: str | None = Field(default=None)
     order_idx: int | None = Field(default=None)
 
     model_config = {
@@ -35,6 +38,7 @@ class SignCreate(SignBase):
                 "sign_cellphone": "010-1234-5678",
                 "sign_license_number": "1234567890",
                 "sign_department": "Cardiology",
+                "sign_role": "user",
                 "sign_jobtitle": "Cardiologist",
                 "hospital_id": 1,
             }
@@ -46,6 +50,7 @@ class SignResponse(SignBase):
     sign_id: int
     sign_password: str = Field(exclude=True)
     hospital_id: int
+    sign_role: str | None = Field(default=None)
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -56,7 +61,7 @@ class SignResponse(SignBase):
 
 class SignUpdate(SignBase):
     sign_id: int
-    sign_password: str = Field(exclude=True, min_length=8, max_length=255)
+    hospital_id: int | None = Field(default=None)
 
 
 class SignDelete(SQLModel):

@@ -43,6 +43,15 @@ class SignService:
 
         return user
 
+    async def delete_sign(self, session: AsyncSession, user_id: int) -> bool:
+        user = await self.get_sign(session=session, sign_id=user_id)
+        if user is not None:
+            await session.delete(user)
+            await session.commit()
+            return True
+        else:
+            return False
+
     async def get_sign(self, session: AsyncSession, sign_id: int) -> Sign | None:
         statement = select(Sign).where(Sign.sign_id == sign_id)
         results = await session.exec(statement)

@@ -57,8 +57,14 @@ class InsufficientPermission(APIException):
     pass
 
 
-class BookNotFound(APIException):
-    """Book Not found"""
+class ClientNotFound(APIException):
+    """Client Not found"""
+
+    pass
+
+
+class ObjectNotFound(APIException):
+    """Object Not found"""
 
     pass
 
@@ -121,12 +127,12 @@ def register_all_errors(app: FastAPI):
         ),
     )
     app.add_exception_handler(
-        BookNotFound,
+        ClientNotFound,
         create_exception_handler(
             status_code=status.HTTP_404_NOT_FOUND,
             initial_detail={
-                "message": "Book not found",
-                "error_code": "book_not_found",
+                "message": "Client not found",
+                "error_code": "client_not_found",
             },
         ),
     )
@@ -214,12 +220,12 @@ def register_all_errors(app: FastAPI):
     )
 
     app.add_exception_handler(
-        BookNotFound,
+        ObjectNotFound,
         create_exception_handler(
             status_code=status.HTTP_404_NOT_FOUND,
             initial_detail={
-                "message": "Book Not Found",
-                "error_code": "book_not_found",
+                "message": "대상을 찾지 못했습니다.",
+                "error_code": "object_not_found",
             },
         ),
     )
