@@ -1,13 +1,94 @@
 from datetime import date, datetime
 from decimal import Decimal
+from enum import IntEnum
 
 from pydantic import ConfigDict
 from sqlalchemy.dialects.mysql import TINYINT
 from sqlmodel import Boolean, Column, Date, Field, Numeric, SQLModel, Text, text
 
+from app.common.types import TINYINT_BOOL
+
+
+####################################################
+## Tel Schema
+####################################################
+class ContactType(IntEnum):
+    TEL = 0
+    MOBILE = 1
+    EMAIL = 2
+
+
+class TelBase(SQLModel):
+    tel_number: str = Field(max_length=32, nullable=True)
+    tel_name: str | None = Field(max_length=64, nullable=True)
+    tel_default: bool | None = Field(default=None, nullable=True)
+    # 0: tel, 1: mobile, 2: email
+    tel_type: int | None = Field(
+        default=0, sa_column=Column(TINYINT, nullable=False, server_default=text("0"))
+    )
+    tel_allow_phone: TINYINT_BOOL = Field(
+        default=False, sa_column=Column(TINYINT, nullable=False, server_default=text("0"))
+    )
+    tel_allow_sms: TINYINT_BOOL = Field(
+        default=False, sa_column=Column(TINYINT, nullable=False, server_default=text("0"))
+    )
+    tel_allow_email: TINYINT_BOOL = Field(
+        default=False, sa_column=Column(TINYINT, nullable=False, server_default=text("0"))
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TelCreate(TelBase):
+    tel_id: int | None = None
+    client_id: int | None = None
+    hospital_id: int | None = None
+    created_sign_id: int | None = None
+    created_sign_name: str | None = None
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "tel_number": "010-1234-5678",
+                "tel_name": "박현서",
+                "tel_default": True,
+                "tel_type": 0,
+                "tel_allow_phone": True,
+                "tel_allow_sms": True,
+                "tel_allow_email": False,
+            }
+        }
+    }
+
+
+class TelResponse(TelBase):
+    tel_id: int
+    client_id: int
+    created_at: datetime | None = None
+    created_sign_id: int | None = None
+    created_sign_name: str | None = None
+    updated_at: datetime | None = None
+    updated_sign_id: int | None = None
+    updated_sign_name: str | None = None
+
+
+class TelUpdate(TelBase):
+    tel_id: int | None = None
+    updated_sign_id: int | None = None
+    updated_sign_name: str | None = None
+
+
+class TelDelete(SQLModel):
+    tel_id: int
+
+
+####################################################
+## Client Schema
+####################################################
+
 
 class ClientBase(SQLModel):
-    client_serial: int = Field(nullable=False, index=True, unique=True)
+    client_serial: int | None = Field(default=None, nullable=False, index=True, unique=True)
     client_name: str | None = Field(default=None, max_length=64, nullable=True)
     client_zip: str | None = Field(default=None, max_length=10, nullable=True)
     client_address1: str | None = Field(default=None, max_length=127, nullable=True)
@@ -49,16 +130,16 @@ class ClientBase(SQLModel):
         default=False, sa_column=Column(Boolean, nullable=False, server_default=text("0"))
     )
 
-    created_sign_name: str | None = Field(default=None, nullable=True, max_length=32)
-    modified_sign_name: str | None = Field(default=None, nullable=True, max_length=32)
-
     model_config = ConfigDict(from_attributes=True)
 
 
 class ClientCreate(ClientBase):
-    hospital_id: int | None = Field(default=None, nullable=False)
-    rank_id: int | None = Field(default=None, nullable=True)
-    created_sign_id: int | None = Field(default=None, nullable=True)
+    hospital_id: int | None = None
+    rank_id: int | None = None
+    created_sign_id: int | None = None
+    created_sign_name: str | None = None
+    tels: list[TelCreate] = []
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -83,10 +164,14 @@ class ClientResponse(ClientBase):
     client_id: int
     hospital_id: int
     rank_id: int | None = None
-    created_sign_id: int | None = None
-    updated_sign_id: int | None = None
     created_at: datetime | None = None
+    created_sign_id: int | None = None
+    created_sign_name: str | None = None
     updated_at: datetime | None = None
+    updated_sign_id: int | None = None
+    updated_sign_name: str | None = None
+    tels: list[TelResponse] | None = None
+
     model_config = ConfigDict(
         json_encoders={datetime: lambda v: v.strftime("%Y-%m-%d")},
     )
@@ -94,7 +179,10 @@ class ClientResponse(ClientBase):
 
 class ClientUpdate(ClientBase):
     hospital_id: int | None = None
+    tels: list[TelCreate] | None = None
     updated_sign_id: int | None = None
+    updated_sign_name: str | None = None
+    rank_id: int | None = None
 
 
 class ClientDelete(SQLModel):

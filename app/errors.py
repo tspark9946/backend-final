@@ -63,6 +63,18 @@ class ClientNotFound(APIException):
     pass
 
 
+class TelNotFound(APIException):
+    """Tel Not found"""
+
+    pass
+
+
+class PetNotFound(APIException):
+    """Pet Not found"""
+
+    pass
+
+
 class ObjectNotFound(APIException):
     """Object Not found"""
 
@@ -133,6 +145,16 @@ def register_all_errors(app: FastAPI):
             initial_detail={
                 "message": "Client not found",
                 "error_code": "client_not_found",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        TelNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Tel not found",
+                "error_code": "tel_not_found",
             },
         ),
     )
@@ -238,6 +260,17 @@ def register_all_errors(app: FastAPI):
                 "message": "Account Not verified",
                 "error_code": "account_not_verified",
                 "resolution": "Please check your email for verification details",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        PetNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Pet Not Found",
+                "error_code": "pet_not_found",
             },
         ),
     )

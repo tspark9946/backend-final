@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import APIRouter, Depends, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -12,7 +10,10 @@ from app.utils.dependencies import (
     RoleChecker,
 )
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/sign",
+    tags=["sign"],
+)
 sign_service = SignService()
 access_token_bearer = AccessTokenBearer()
 role_checker = Depends(RoleChecker(allowed_roles=["admin", "user"]))
@@ -21,13 +22,13 @@ role_checker = Depends(RoleChecker(allowed_roles=["admin", "user"]))
 REFRESH_TOKEN_EXPIRY = 2
 
 
-@router.get("/", response_model=List[SignResponse], dependencies=[role_checker])
+@router.get("/", response_model=list[SignResponse], dependencies=[role_checker])
 async def read_all_user(session: AsyncSession = Depends(get_session), _: bool = Depends(access_token_bearer)):
     users = await sign_service.get_signs(session=session)
     return users
 
 
-@router.get("/all", response_model=List[SignResponse])
+@router.get("/all", response_model=list[SignResponse])
 async def read_all_user_none(session: AsyncSession = Depends(get_session)):
     users = await sign_service.get_signs(session=session)
     return users

@@ -28,7 +28,10 @@ from app.utils.hashing import Hash
 from app.utils.mail import create_message, mail
 from app.utils.token import create_access_token, create_url_safe_token, decode_url_safe_token
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/auth",
+    tags=["auth"],
+)
 sign_service = SignService()
 role_checker = RoleChecker(allowed_roles=["admin", "user"])
 
@@ -61,6 +64,7 @@ async def create_user_Account(
 
     subject = "Verify Your email"
     message = create_message(subject=subject, recipients=emails, body=html)
+    print(type(message))
 
     # background task로 이메일 전송하여 API 응답 지연 방지
     # 임시 메일 생성때문에 임시로 주석처리

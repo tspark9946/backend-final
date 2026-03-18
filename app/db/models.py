@@ -1,11 +1,11 @@
 from datetime import datetime
 
-from sqlmodel import Boolean, Column, Field, ForeignKey, Integer, SQLModel, String, text
+from sqlalchemy.dialects.mysql import TINYINT
+from sqlmodel import Boolean, Column, Field, ForeignKey, Integer, Relationship, SQLModel, String, text
 
-from app.schemas.client import ClientBase
+from app.schemas.client import ClientBase, TelBase
 from app.schemas.pet import PetBase
 from app.schemas.sign import SignBase
-from app.schemas.tel import TelBase
 
 from .mixins import TimestampMixin
 
@@ -140,7 +140,9 @@ class Sign(TimestampMixin, SignBase, table=True):
 class Rank(TimestampMixin, table=True):
     rank_id: int | None = Field(default=None, primary_key=True, index=True)
     rank_name: str = Field(max_length=64)
-    rank_default: int = Field(default=0)
+    rank_default: int | None = Field(
+        default=0, sa_column=Column(TINYINT, nullable=False, server_default=text("0"))
+    )
     order_idx: int = Field(default=None, nullable=True)
     hospital_id: int | None = Field(
         sa_column=Column(
@@ -156,21 +158,6 @@ class Rank(TimestampMixin, table=True):
 
 class Client(TimestampMixin, ClientBase, table=True):
     client_id: int | None = Field(default=None, primary_key=True, index=True)
-
-    created_sign_id: int | None = Field(
-        sa_column=Column(
-            Integer,
-            ForeignKey("sign.sign_id", ondelete="NO ACTION", onupdate="NO ACTION"),
-            nullable=True,
-        )
-    )
-    updated_sign_id: int | None = Field(
-        sa_column=Column(
-            Integer,
-            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
-            nullable=True,
-        )
-    )
     rank_id: int | None = Field(
         sa_column=Column(
             Integer,
@@ -178,28 +165,14 @@ class Client(TimestampMixin, ClientBase, table=True):
             nullable=True,
         )
     )
-    hospital_id: int | None = Field(
-        sa_column=Column(
-            Integer,
-            ForeignKey("HOSPITAL.hospital_id", ondelete="NO ACTION", onupdate="NO ACTION"),
-            nullable=False,
-        )
-    )
-
-    def __repr__(self) -> str:
-        return f"<Client {self.client_name}>"
-
-
-class Tel(TimestampMixin, TelBase, table=True):
-    tel_id: int | None = Field(default=None, primary_key=True, index=True)
-
     created_sign_id: int | None = Field(
         sa_column=Column(
             Integer,
-            ForeignKey("sign.sign_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
             nullable=True,
         )
     )
+    created_sign_name: str | None = Field(default=None, nullable=True, max_length=32)
     updated_sign_id: int | None = Field(
         sa_column=Column(
             Integer,
@@ -207,6 +180,7 @@ class Tel(TimestampMixin, TelBase, table=True):
             nullable=True,
         )
     )
+    updated_sign_name: str | None = Field(default=None, nullable=True, max_length=32)
     hospital_id: int | None = Field(
         sa_column=Column(
             Integer,
@@ -214,6 +188,47 @@ class Tel(TimestampMixin, TelBase, table=True):
             nullable=False,
         )
     )
+    # lazy="selectin" 설정을 추가하여 항상 미리 로드하도록 설정
+    tels: list["Tel"] = Relationship(back_populates="client", sa_relationship_kwargs={"lazy": "selectin"})
+
+    def __repr__(self) -> str:
+        return f"<Client {self.client_name}>"
+
+
+class Tel(TimestampMixin, TelBase, table=True):
+    tel_id: int | None = Field(default=None, primary_key=True, index=True)
+    client_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("client.client_id", ondelete="CASCADE", onupdate="CASCADE"),
+            nullable=True,
+        )
+    )
+    created_sign_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
+            nullable=True,
+        )
+    )
+    created_sign_name: str | None = Field(default=None, nullable=True, max_length=32)
+    updated_sign_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
+            nullable=True,
+        )
+    )
+    updated_sign_name: str | None = Field(default=None, nullable=True, max_length=32)
+    hospital_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("HOSPITAL.hospital_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+            nullable=False,
+        )
+    )
+
+    client: Client | None = Relationship(back_populates="tels")
 
     def __repr__(self) -> str:
         return f"<Tel {self.tel_number}>"
@@ -329,7 +344,7 @@ class Pet(TimestampMixin, PetBase, table=True):
     client_id: int | None = Field(
         sa_column=Column(
             Integer,
-            ForeignKey("client.client_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+            ForeignKey("client.client_id", ondelete="NO ACTION", onupdate="CASCADE"),
             nullable=False,
         )
     )
@@ -357,17 +372,11 @@ class Pet(TimestampMixin, PetBase, table=True):
     created_sign_id: int | None = Field(
         sa_column=Column(
             Integer,
-            ForeignKey("sign.sign_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
             nullable=True,
         )
     )
-    created_sign_id: int | None = Field(
-        sa_column=Column(
-            Integer,
-            ForeignKey("sign.sign_id", ondelete="NO ACTION", onupdate="NO ACTION"),
-            nullable=True,
-        )
-    )
+    created_sign_name: str = Field(default=None, max_length=32)
     updated_sign_id: int | None = Field(
         sa_column=Column(
             Integer,
@@ -375,6 +384,7 @@ class Pet(TimestampMixin, PetBase, table=True):
             nullable=True,
         )
     )
+    updated_sign_name: str | None = Field(default=None, max_length=32, nullable=True)
     hospital_id: int | None = Field(
         sa_column=Column(
             Integer,

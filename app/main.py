@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
-from app.api.v1 import auth, client, index, sign
+from app.api.v1 import auth, client, index, pet, sign
 from app.common.logging import setup_logging
+
+# from app.db.database import initdb
 from app.errors import register_all_errors
 from app.middlewares.middleware import register_middleware
 from app.utils.lifespan import Lifespan
@@ -23,6 +25,7 @@ def create_app() -> FastAPI:
 
     # service start, stop event handlers
     lifespan = Lifespan()
+    # database 초기화는 앱 시작 시 한 번만 실행되도록 lifespan의 startup 이벤트에 등록
     # lifespan.add_startup(initdb)
     lifespan.add_shutdown(print, "Goodbye world")
     lifespan.states = get_states
@@ -44,9 +47,10 @@ def create_app() -> FastAPI:
 
     # 라우터 등록
     app.include_router(index.router, tags=["index"])
-    app.include_router(auth.router, prefix=f"{version_prefix}/auth", tags=["auth"])
-    app.include_router(sign.router, prefix=f"{version_prefix}/sign", tags=["sign"])
-    app.include_router(client.router, prefix=f"{version_prefix}/client", tags=["client"])
+    app.include_router(auth.router, prefix=f"{version_prefix}")
+    app.include_router(sign.router, prefix=f"{version_prefix}")
+    app.include_router(client.router, prefix=f"{version_prefix}")
+    app.include_router(pet.router, prefix=f"{version_prefix}")
 
     return app
 

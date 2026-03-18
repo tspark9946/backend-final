@@ -1,5 +1,3 @@
-from typing import List
-
 from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -38,7 +36,7 @@ class Settings(BaseSettings):
         return f"mysql+aiomysql://{self.db_user}:{self.db_password}@{self.db_host}/{self.db_name}?charset=utf8mb4"
 
     @field_validator("ALLOWED_ORIGINS")
-    def parse_allowed_origins(cls, v: str) -> List[str]:
+    def parse_allowed_origins(cls, v: str) -> list[str]:
         return v.split(",") if v else []
 
     # model_config = SettingsConfigDict(

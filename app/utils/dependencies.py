@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPBearer
@@ -76,7 +76,7 @@ async def get_current_user(
 
 # Role-based access control (RBAC) 의존성
 class RoleChecker:
-    def __init__(self, allowed_roles: List[str]) -> None:
+    def __init__(self, allowed_roles: list[str]) -> None:
         self.allowed_roles = allowed_roles
 
     def __call__(self, current_user: Sign = Depends(get_current_user)) -> Any:
