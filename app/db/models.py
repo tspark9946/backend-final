@@ -6,6 +6,7 @@ from sqlmodel import Boolean, Column, Field, ForeignKey, Integer, Relationship, 
 from app.schemas.client import ClientBase, TelBase
 from app.schemas.pet import PetBase
 from app.schemas.sign import SignBase
+from app.schemas.vital import VitalBase
 
 from .mixins import TimestampMixin
 
@@ -395,3 +396,40 @@ class Pet(TimestampMixin, PetBase, table=True):
 
     def __repr__(self) -> str:
         return f"<Pet {self.pet_name}>"
+
+
+class Vital(TimestampMixin, VitalBase, table=True):
+    vital_id: int | None = Field(default=None, primary_key=True, index=True)
+    pet_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("pet.pet_id", ondelete="CASCADE", onupdate="CASCADE"),
+            nullable=False,
+        )
+    )
+    created_sign_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
+            nullable=True,
+        )
+    )
+    created_sign_name: str = Field(default=None, max_length=32)
+    updated_sign_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("sign.sign_id", ondelete="SET NULL", onupdate="CASCADE"),
+            nullable=True,
+        )
+    )
+    updated_sign_name: str | None = Field(default=None, max_length=32, nullable=True)
+    hospital_id: int | None = Field(
+        sa_column=Column(
+            Integer,
+            ForeignKey("HOSPITAL.hospital_id", ondelete="NO ACTION", onupdate="NO ACTION"),
+            nullable=False,
+        )
+    )
+
+    def __repr__(self) -> str:
+        return f"<Vital {self.pet_id}>"

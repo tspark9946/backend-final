@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.v1 import auth, client, index, pet, sign
+from app.api.v1 import auth, client, index, pet, sign, vital
 from app.common.logging import setup_logging
 
 # from app.db.database import initdb
@@ -51,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(sign.router, prefix=f"{version_prefix}")
     app.include_router(client.router, prefix=f"{version_prefix}")
     app.include_router(pet.router, prefix=f"{version_prefix}")
+    app.include_router(vital.router, prefix=f"{version_prefix}")
 
     return app
 

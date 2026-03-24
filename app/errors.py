@@ -105,6 +105,12 @@ class AccountNotVerified(Exception):
     pass
 
 
+class VitalNotFound(APIException):
+    """Vital Not found"""
+
+    pass
+
+
 def create_exception_handler(
     status_code: int, initial_detail: Any
 ) -> Callable[[Request, Exception], JSONResponse]:
@@ -227,6 +233,14 @@ def register_all_errors(app: FastAPI):
         create_exception_handler(
             status_code=status.HTTP_404_NOT_FOUND,
             initial_detail={"message": "Tag Not Found", "error_code": "tag_not_found"},
+        ),
+    )
+
+    app.add_exception_handler(
+        VitalNotFound,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={"message": "Vital Not Found", "error_code": "vital_not_found"},
         ),
     )
 
