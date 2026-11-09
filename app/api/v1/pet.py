@@ -54,18 +54,30 @@ async def create_pet(
     return new_pet
 
 
-@router.get("/{client_id}/pet/", response_model=list[PetResponse], dependencies=[role_checker])
+@router.get("/{client_id}/pet/", response_model=list[PetResponse])
 async def read_pets(
     client_id: int,
     hospital_id: int = Query(default=0, description="병원 ID로 필터링"),
     session: AsyncSession = Depends(get_session),
-    _: bool = Depends(access_token_bearer),
 ):
     if hospital_id:
         pets = await pet_service.get_all_pets(session=session, hospital_id=hospital_id)
     else:
         pets = await pet_service.get_pets(session=session, client_id=client_id)
     return pets
+
+# @router.get("/{client_id}/pet/", response_model=list[PetResponse], dependencies=[role_checker])
+# async def read_pets(
+#     client_id: int,
+#     hospital_id: int = Query(default=0, description="병원 ID로 필터링"),
+#     session: AsyncSession = Depends(get_session),
+#     _: bool = Depends(access_token_bearer),
+# ):
+#     if hospital_id:
+#         pets = await pet_service.get_all_pets(session=session, hospital_id=hospital_id)
+#     else:
+#         pets = await pet_service.get_pets(session=session, client_id=client_id)
+#     return pets
 
 
 @router.get("/{client_id}/pet/{pet_id}", response_model=PetResponse, dependencies=[role_checker])

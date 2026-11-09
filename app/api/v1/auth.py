@@ -36,7 +36,7 @@ sign_service = SignService()
 role_checker = RoleChecker(allowed_roles=["admin", "user"])
 
 
-REFRESH_TOKEN_EXPIRY = 2
+REFRESH_TOKEN_EXPIRY = 2  # 2 days in days
 
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
@@ -106,7 +106,12 @@ async def login_user(user_data: UserLogin, session: AsyncSession = Depends(get_s
                     "message": "Login successful",
                     "access_token": access_token,
                     "refresh_token": refresh_token,
-                    "user": {"email": user.sign_email, "uid": str(user.sign_id)},
+                    "user": {
+                        "email": user.sign_email,
+                        "uid": user.sign_id,
+                        "name": user.sign_name,
+                        "hid": user.hospital_id,
+                    },
                 }
             )
 
